@@ -53,10 +53,49 @@ function NoticeReWrite() {
   };
 
   // Handle file input change
-  const handleFileChange = (e) => {
-    const newFiles = Array.from(e.target.files);
-    setFiles((prevFiles) => [...prevFiles, ...newFiles]); // Append new files
-  };
+  const handleFileChange = async (e) => {
+    const newFiles = Array.from(e.target.files); // Convert selected files to an array
+  
+    if (newFiles.length === 0) return; // Exit if no files are selected
+  
+    try {
+        const token = localStorage.getItem('authToken'); // Get the auth token
+  
+        // Create FormData to append files for the request
+        const formData = new FormData();
+        newFiles.forEach(file => {
+            formData.append('files', file); // Append each file to FormData
+        });
+  
+        // Send POST request to check for filename duplicates
+        const response = await fetch('http://192.168.0.142:8080/member/community/filenameCheck', {
+            method: 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`, // Include auth token
+            },
+            body: formData,
+        });
+  
+        if (response.ok) {
+            const data = await response.json();
+            if (data.length === 0) {
+                // If no duplicate file names, update the files state with file names
+                setFiles(prevFiles => [...prevFiles, ...newFiles.map(file => file.name)]);
+            } else {
+                // Alert with duplicate file names and reset the input
+                alert(`동일한 파일명(${data.join(', ')})이 존재합니다. 파일명을 다시 설정해주세요.`); // Display all duplicate names
+                e.target.value = ''; // Clear file input
+                setFiles([]); // Reset selected files state
+            }
+        } else {
+            alert('파일명 중복검사 실패했습니다.');
+        }
+    } catch (error) {
+        console.error('오류 발생:', error);
+        alert('서버와 통신하는 중 오류가 발생했습니다.');
+    }
+};
+
 
   // Handle file removal
   const handleRemoveFile = (fileName) => {
@@ -141,6 +180,10 @@ function NoticeReWrite() {
               {fileName} 
               <button type="button" onClick={() => handleRemoveFile(fileName)}>삭제</button>
             </div>
+          ))}
+           <label>새로 첨부할 파일들:</label>
+          {files.map((fileName, index) => (
+            <div key={index}>{fileName}</div>
           ))}
           <input type="file" multiple onChange={handleFileChange} />
         </div>
