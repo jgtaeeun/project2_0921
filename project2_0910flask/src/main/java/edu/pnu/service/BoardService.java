@@ -61,28 +61,9 @@ public class BoardService {
     
     //글 수정
     @Transactional
-    public void updateBoard(Board board, Long id) throws SQLException {
+    public void updateBoard(Board board) throws SQLException {
     
-    	Board updateboard= boardRepo.findById(id).get();
-
-        if (updateboard.getBoardId()!=null) {
-
-            
-            	if (board.getTitle()!=null && board.getContent()!=null) {
-            	updateboard.setContent(board.getContent());
-            	updateboard.setTitle(board.getTitle());
-               	boardRepo.save(updateboard);
-            	}
-            	else if(board.getTitle()==null && board.getContent()!=null) {
-            		updateboard.setContent(board.getContent());
-                   	boardRepo.save(updateboard);
-            	}
-            	else if (board.getTitle()!=null && board.getContent()==null) {
-            	 	updateboard.setTitle(board.getTitle());
-                   	boardRepo.save(updateboard);
-            	}
-               
-            } 
+    	  boardRepo.save(board);
         }
     
     //글 삭제

@@ -1,7 +1,9 @@
 package edu.pnu.controller;
 
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -190,32 +192,52 @@ public class BoardController {
 	    }
 	}
 
-	 @PutMapping("/community/{id}")
-	 public ResponseEntity<Void> updateBoard(
-	         @PathVariable Long id,
-	         @RequestParam("title") String title,
-	         @RequestParam("content") String content,
-	         @RequestParam(value = "file", required = false)  MultipartFile file) {
-	     try {
-	         // Your existing authentication and ownership checks...
+	@PutMapping("/community/{id}")
+	public ResponseEntity<Void> updateBoard(
+	        @PathVariable Long id,
+	        @RequestParam("title") String title,
+	        @RequestParam("content") String content,
+	        @RequestParam(value = "files", required = false) MultipartFile[] files,
+	        @RequestParam(value = "existingFiles", required = false) String[] existingFiles) throws IOException {
+	    try {
+	        // 게시물 존재 여부 확인
+	        Board existingBoard = boardRepo.findById(id).orElse(null);
+	        if (existingBoard == null) {
+	            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+	        }
 
-	         Board board = new Board();
-	         board.setTitle(title);
-	         board.setContent(content);
-	         
-	         // Handle the file if it's provided
-	         if (file != null && !file.isEmpty()) {
-	             // Save the file or handle it as per your logic
-	        	 String fileName = file.getOriginalFilename();
-	        	 board.setFileName(fileName );
-	         }
+	        // 게시물 업데이트
+	        existingBoard.setTitle(title);
+	        existingBoard.setContent(content);
+	        
+	        // 기존 파일 처리
+	        List<String> fileNames = new ArrayList<>();
+	        if (existingFiles != null) {
+	            fileNames.addAll(Arrays.asList(existingFiles)); // 기존 파일 이름 추가
+	        }
 
-	         boardService.updateBoard(board, id);
-	         return ResponseEntity.ok().build();
-	     } catch (SQLException e) {
-	         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-	     }
-	 }
+	        // 새 파일 처리
+	        if (files != null && files.length > 0) {
+	            for (MultipartFile file : files) {
+	                if (!file.isEmpty()) {
+	                    String fileName = file.getOriginalFilename();
+	                    fileNames.add(fileName);
+	                    fileService.saveFile(file); // 파일 저장 로직
+	                }
+	            }
+	        }
+
+	        // 파일 이름 업데이트
+	        existingBoard.setFileName(String.join(",", fileNames));
+
+	        // 서비스 호출
+	        boardService.updateBoard(existingBoard);
+	        return ResponseEntity.ok().build();
+	    } catch (SQLException e) {
+	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	    }
+	}
+
 
 	@DeleteMapping("/community/{id}")
 	public ResponseEntity<Void> deleteBoard( @PathVariable Long id) {
