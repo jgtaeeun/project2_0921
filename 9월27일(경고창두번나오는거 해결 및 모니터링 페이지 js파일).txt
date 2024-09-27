@@ -1,0 +1,2 @@
+모니터링 페이지-  analysisResult.js
+두번 alert 창 반복되는 거 해결-index.js에서  <React.StrictMode> 주석치기 

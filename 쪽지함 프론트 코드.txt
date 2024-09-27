@@ -1,5 +1,0 @@
-2)쪽지함을 위한  프론트 코드
-<쪽지함>
-header.js,header.css : 관리자-관리자페이지 , member-쪽지함
-messageBox.js       :member -get /member/message         토큰
-messageWrite.js/timeTable.js    :admin -post   /member/message        fullnumber, content  formdat
